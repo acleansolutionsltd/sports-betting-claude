@@ -50,6 +50,9 @@ Then upload these files to your Project's **knowledge base** (drag and drop or c
 - `skills/edge-detection/SKILL.md`
 - `skills/bankroll-management/SKILL.md`
 - `skills/performance-tracking/SKILL.md`
+- `skills/team-ratings/SKILL.md`
+- `skills/lineup-check/SKILL.md`
+- `skills/player-props/SKILL.md`
 - `skills/shared/anti-bias-checklist.md`
 - `skills/shared/output-format.md`
 
@@ -59,6 +62,7 @@ Then upload these files to your Project's **knowledge base** (drag and drop or c
 - `skills/sport-specific/mlb/SKILL.md`
 - `skills/sport-specific/nhl/SKILL.md`
 - `skills/sport-specific/ncaa/SKILL.md`
+- `skills/sport-specific/epl/SKILL.md`
 
 ### 4. Set your bankroll in the Project instructions
 
@@ -101,7 +105,17 @@ sports-betting-claude/
 │   │   ├── nba/SKILL.md
 │   │   ├── mlb/SKILL.md
 │   │   ├── nhl/SKILL.md
-│   │   └── ncaa/SKILL.md
+│   │   ├── ncaa/SKILL.md
+│   │   └── epl/SKILL.md               ← Premier League (3-way markets)
+│   │
+│   ├── team-ratings/
+│   │   └── SKILL.md                   ← opponent-adjusted team ratings, home/away, matchups
+│   │
+│   ├── lineup-check/
+│   │   └── SKILL.md                   ← re-check bets once lineups/inactives are confirmed
+│   │
+│   ├── player-props/
+│   │   └── SKILL.md                   ← project and price player props (shots, tackles, yards…)
 │   │
 │   ├── performance-tracking/
 │   │   └── SKILL.md                   ← bet log format, ROI tracking, calibration
@@ -109,6 +123,10 @@ sports-betting-claude/
 │   └── shared/
 │       ├── anti-bias-checklist.md     ← cognitive bias detection
 │       └── output-format.md           ← standardized bet slip format
+│
+├── tools/
+│   ├── props/                         ← Python: player game logs (Sofascore/ESPN) + prop pricer
+│   └── ratings/                       ← Python: team ratings, matchup projections, backtests
 │
 ├── docs/
 │   ├── how-edge-detection-works.md

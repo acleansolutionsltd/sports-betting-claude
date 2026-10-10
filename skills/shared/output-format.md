@@ -31,6 +31,7 @@ what the market is missing, what the model shows vs what the line implies.
 No narrative fluff — just the signal.]
 
 Closing target: [What line you expect it to close at — used for CLV tracking]
+Lineup:         [CONFIRMED / PENDING LINEUP — re-check at [time] (see lineup-check skill)]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [Repeat block for each bet]
