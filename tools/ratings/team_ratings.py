@@ -47,7 +47,7 @@ CONFIG = {
     },
     "epl": {
         "label": "Premier League", "unit": "goals",
-        "carry": 0.7, "lam_main": 8.0, "lam_split": 40.0, "lam_prior_season": 3.0,
+        "carry": 0.5, "lam_main": 16.0, "lam_split": 200.0, "lam_prior_season": 3.0,
         "xg_weight": 0.5,     # share of the fitted target taken from xG when available
     },
 }

@@ -67,7 +67,7 @@ Newly promoted side at home: no extra boost — markets already overrate early-s
 
 Run `tools/ratings/team_ratings.py matchup epl [HOME] [AWAY]` (see `skills/team-ratings/SKILL.md`):
 - Each side's attack is matched against the other's defence, adjusted for opponents already faced.
-- Ratings blend goals with match xG and start from last season's (70% kept). Promoted clubs start from last season's three weakest sides.
+- Ratings blend goals with match xG and start from last season's (50% kept). Promoted clubs start from last season's three weakest sides.
 - The output is an expected-goals pair and a Poisson 1X2 / over-under / BTTS, blended with the market price (`--trust`).
 - Home edge is already in the projection. Home/away splits are shrunk hard: do not lean on a team's home form before ~15 home games.
 - Poisson under-rates draws a little: be cautious on draw and under value.

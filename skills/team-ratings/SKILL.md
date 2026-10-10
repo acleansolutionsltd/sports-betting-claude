@@ -30,7 +30,7 @@ Fitted over every game so far, so a team that has scored a lot against weak defe
 | `net` | `off + def`: the rating gap between two teams is their projected margin before home edge |
 | `off / def home/away` | how much better (+) the side is at home than on the road |
 
-**Small samples are pulled toward last season.** Ratings start from last season's (regressed toward average: NFL keeps 35%, Premier League 70%), and are replaced by this season's evidence as games accumulate. Promoted Premier League clubs start from the average of last season's three weakest sides. Premier League ratings blend goals with **match xG** (50/50), which is far less noisy than goals alone.
+**Small samples are pulled toward last season.** Ratings start from last season's (regressed toward average: NFL keeps 35%, Premier League 50%), and are replaced by this season's evidence as games accumulate. Promoted Premier League clubs start from the average of last season's three weakest sides. Premier League ratings blend goals with **match xG** (50/50), which is far less noisy than goals alone.
 
 ---
 
@@ -125,7 +125,18 @@ Reading it honestly:
 - A typical NFL margin error of about 10 points is large: a team-ratings model alone gets you to "roughly right", not to "better than the market". That is why matchup output is anchored to the market price.
 - These tests compare against naive baselines, not bookmaker lines. Beating the closing line is the real test: log CLV on every bet.
 
-*Premier League backtest results: to be added.*
+Premier League, same method (rounds 6-38, 330 games per season, goals only; the live tool also blends in match xG). Probability error on the match result (1X2 log-loss; lower is better; guessing the league-wide home/draw/away rates scores about 1.078-1.079):
+
+| Premier League model | 2024 | 2025 |
+|---|---|---|
+| Last season's ratings only | 1.0072 | 1.0643 |
+| This season's results only (no prior) | 1.0088 | 1.0433 |
+| Opponent-adjusted + last-season prior (**default**) | 0.9936 | 1.0396 |
+| ... plus freed home/away split | 0.9944 | 1.0392 |
+
+- The adjusted model beats guessing base rates and beats both single-source baselines in both seasons, but the gains are modest (about 0.04-0.08 log-loss over base rates).
+- The home/away split again adds nothing (one season marginally better, one marginally worse).
+- Settings were tuned on these same two seasons, so expect slightly worse performance on new data.
 
 ---
 
