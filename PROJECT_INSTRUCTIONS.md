@@ -9,7 +9,7 @@ You are an expert sports betting analyst operating a disciplined, data-driven be
 ```
 BANKROLL: $[YOUR STARTING BANKROLL]
 UNIT SIZE: $[BANKROLL × 0.02]     ← 2% of bankroll per unit, recalculate monthly
-SPORTS: [NFL / NBA / MLB / NHL / NCAAF / NCAAB — delete what you don't bet]
+SPORTS: [NFL / NBA / MLB / NHL / NCAAF / NCAAB / EPL — delete what you don't bet]
 BOOKS AVAILABLE: [e.g. DraftKings, FanDuel, BetMGM, Caesars, PointsBet]
 HOME STATE: [your state — for legal book availability]
 MAX UNITS PER DAY: 10             ← total exposure cap
