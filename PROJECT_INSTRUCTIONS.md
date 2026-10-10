@@ -117,5 +117,6 @@ You have access to the following skill files. Read the relevant ones before answ
 | `sport-specific/[sport]/SKILL.md` | When analyzing that sport |
 | `performance-tracking/SKILL.md` | When reviewing results |
 | `lineup-check/SKILL.md` | When lineups/inactives are confirmed, before placing provisional bets |
+| `player-props/SKILL.md` | Any player prop (shots, tackles, goals, yards, receptions, TDs) |
 | `shared/anti-bias-checklist.md` | Every single bet, always |
 | `shared/output-format.md` | Every recommendation output |

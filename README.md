@@ -51,6 +51,7 @@ Then upload these files to your Project's **knowledge base** (drag and drop or c
 - `skills/bankroll-management/SKILL.md`
 - `skills/performance-tracking/SKILL.md`
 - `skills/lineup-check/SKILL.md`
+- `skills/player-props/SKILL.md`
 - `skills/shared/anti-bias-checklist.md`
 - `skills/shared/output-format.md`
 
@@ -109,12 +110,18 @@ sports-betting-claude/
 │   ├── lineup-check/
 │   │   └── SKILL.md                   ← re-check bets once lineups/inactives are confirmed
 │   │
+│   ├── player-props/
+│   │   └── SKILL.md                   ← project and price player props (shots, tackles, yards…)
+│   │
 │   ├── performance-tracking/
 │   │   └── SKILL.md                   ← bet log format, ROI tracking, calibration
 │   │
 │   └── shared/
 │       ├── anti-bias-checklist.md     ← cognitive bias detection
 │       └── output-format.md           ← standardized bet slip format
+│
+├── tools/
+│   └── props/                         ← Python: player game logs (Sofascore/ESPN) + prop pricer
 │
 ├── docs/
 │   ├── how-edge-detection-works.md
