@@ -50,6 +50,7 @@ Then upload these files to your Project's **knowledge base** (drag and drop or c
 - `skills/edge-detection/SKILL.md`
 - `skills/bankroll-management/SKILL.md`
 - `skills/performance-tracking/SKILL.md`
+- `skills/lineup-check/SKILL.md`
 - `skills/shared/anti-bias-checklist.md`
 - `skills/shared/output-format.md`
 
@@ -104,6 +105,9 @@ sports-betting-claude/
 │   │   ├── nhl/SKILL.md
 │   │   ├── ncaa/SKILL.md
 │   │   └── epl/SKILL.md               ← Premier League (3-way markets)
+│   │
+│   ├── lineup-check/
+│   │   └── SKILL.md                   ← re-check bets once lineups/inactives are confirmed
 │   │
 │   ├── performance-tracking/
 │   │   └── SKILL.md                   ← bet log format, ROI tracking, calibration

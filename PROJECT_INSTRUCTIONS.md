@@ -67,6 +67,10 @@ Cap at [MAX UNITS PER BET]
 Format the output exactly as specified in `skills/shared/output-format.md`.
 Always state explicitly when there are no qualifying bets: "No qualifying edge found today — pass."
 
+### Step 7 — Lineup confirmation
+Mark any bet whose edge depends on an unconfirmed player as `PENDING LINEUP` and state when lineups are released.
+When the user says lineups are out (or asks to re-check), run `lineup-check/SKILL.md` and return a CONFIRM / RESIZE / CANCEL / NEW decision for each pending bet.
+
 ---
 
 ## Standing rules you never break
@@ -112,5 +116,6 @@ You have access to the following skill files. Read the relevant ones before answ
 | `bankroll-management/SKILL.md` | Any time you're sizing a bet |
 | `sport-specific/[sport]/SKILL.md` | When analyzing that sport |
 | `performance-tracking/SKILL.md` | When reviewing results |
+| `lineup-check/SKILL.md` | When lineups/inactives are confirmed, before placing provisional bets |
 | `shared/anti-bias-checklist.md` | Every single bet, always |
 | `shared/output-format.md` | Every recommendation output |
