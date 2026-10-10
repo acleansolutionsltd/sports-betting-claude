@@ -50,6 +50,7 @@ Then upload these files to your Project's **knowledge base** (drag and drop or c
 - `skills/edge-detection/SKILL.md`
 - `skills/bankroll-management/SKILL.md`
 - `skills/performance-tracking/SKILL.md`
+- `skills/team-ratings/SKILL.md`
 - `skills/lineup-check/SKILL.md`
 - `skills/player-props/SKILL.md`
 - `skills/shared/anti-bias-checklist.md`
@@ -107,6 +108,9 @@ sports-betting-claude/
 │   │   ├── ncaa/SKILL.md
 │   │   └── epl/SKILL.md               ← Premier League (3-way markets)
 │   │
+│   ├── team-ratings/
+│   │   └── SKILL.md                   ← opponent-adjusted team ratings, home/away, matchups
+│   │
 │   ├── lineup-check/
 │   │   └── SKILL.md                   ← re-check bets once lineups/inactives are confirmed
 │   │
@@ -121,7 +125,8 @@ sports-betting-claude/
 │       └── output-format.md           ← standardized bet slip format
 │
 ├── tools/
-│   └── props/                         ← Python: player game logs (Sofascore/ESPN) + prop pricer
+│   ├── props/                         ← Python: player game logs (Sofascore/ESPN) + prop pricer
+│   └── ratings/                       ← Python: team ratings, matchup projections, backtests
 │
 ├── docs/
 │   ├── how-edge-detection-works.md

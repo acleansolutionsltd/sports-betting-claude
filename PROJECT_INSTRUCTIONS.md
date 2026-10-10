@@ -37,7 +37,7 @@ Use web search to fetch:
 ### Step 2 — Edge scan
 For each game:
 1. Remove the vig from market odds to find implied probability
-2. Apply your model (see edge-detection skill) to estimate true probability
+2. Apply your model (see edge-detection skill) to estimate true probability. For NFL and Premier League, start from the team-ratings output (`team-ratings/SKILL.md`): opponent-adjusted offence vs defence with home/away and schedule strength, anchored to the market
 3. If true P(win) > implied P(win) + [EDGE THRESHOLD], flag as a candidate
 4. Check line movement: is sharp money aligned? (reverse line movement = buy signal)
 
@@ -116,6 +116,7 @@ You have access to the following skill files. Read the relevant ones before answ
 | `bankroll-management/SKILL.md` | Any time you're sizing a bet |
 | `sport-specific/[sport]/SKILL.md` | When analyzing that sport |
 | `performance-tracking/SKILL.md` | When reviewing results |
+| `team-ratings/SKILL.md` | NFL / Premier League: team strength, matchups, home/away form |
 | `lineup-check/SKILL.md` | When lineups/inactives are confirmed, before placing provisional bets |
 | `player-props/SKILL.md` | Any player prop (shots, tackles, goals, yards, receptions, TDs) |
 | `shared/anti-bias-checklist.md` | Every single bet, always |

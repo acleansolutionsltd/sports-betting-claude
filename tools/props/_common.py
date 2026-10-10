@@ -1,15 +1,27 @@
 """Shared helpers for the prop tools: HTTP fetch and probability maths (stdlib only)."""
 import json
 import math
+import time
+import urllib.error
 import urllib.request
 
 USER_AGENT = "Mozilla/5.0 (sports-betting-claude prop tools)"
 
 
-def get_json(url):
+def get_json(url, retries=3):
+    """GET a JSON endpoint, retrying transient network errors with a short backoff."""
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        return json.load(resp)
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                return json.load(resp)
+        except urllib.error.HTTPError as err:
+            if err.code < 500 and err.code != 429 or attempt == retries:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == retries:
+                raise
+        time.sleep(2 ** attempt)
 
 
 # ---------- odds ----------
