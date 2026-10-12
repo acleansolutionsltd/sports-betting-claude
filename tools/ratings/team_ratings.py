@@ -522,6 +522,52 @@ def cmd_backtest(args):
     print("\nLower is better. Bookmaker lines are not in this table: beating a naive baseline is necessary but not sufficient to beat the market.")
 
 
+EPL_SHORT = {
+    "Arsenal": "ARS", "Aston Villa": "AVL", "Bournemouth": "BOU", "Brentford": "BRE",
+    "Brighton & Hove Albion": "BHA", "Burnley": "BUR", "Chelsea": "CHE", "Coventry City": "COV",
+    "Crystal Palace": "CRY", "Everton": "EVE", "Fulham": "FUL", "Hull City": "HUL", "Ipswich Town": "IPS",
+    "Leeds United": "LEE", "Liverpool FC": "LIV", "Manchester City": "MCI", "Manchester United": "MUN",
+    "Newcastle United": "NEW", "Nottingham Forest": "NFO", "Sunderland": "SUN", "Tottenham Hotspur": "TOT",
+    "West Ham United": "WHU", "Wolverhampton": "WOL",
+}
+
+
+def cmd_snapshot(args):
+    """Export current ratings for both sports as JSON (used by web/ratings-3d.html)."""
+    import datetime
+    out = {"generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), "sports": {}}
+    for sport in ("nfl", "epl"):
+        cfg = CONFIG[sport]
+        r, games, teams, prior = build_ratings(sport, args.season)
+        names = {t: teams.get(t, t) for t in r["off"] if t in teams}
+        entry = {
+            "label": cfg["label"], "season": args.season, "games": len(games), "unit": cfg["unit"],
+            "mu_h": round(r["mu_h"], 3), "mu_a": round(r["mu_a"], 3), "lam_main": cfg["lam_main"],
+            "teams": {t: {
+                "name": names[t],
+                "short": t if sport == "nfl" else EPL_SHORT.get(names[t], names[t][:3].upper()),
+                "gp": r["gp"].get(t, 0),
+                **{k: round(r[k][t], 3) for k in ("off", "dfn", "oh", "dh")},
+            } for t in names},
+        }
+        if sport == "nfl":
+            entry["sd_margin"], entry["sd_total"] = cfg["sd_margin"], cfg["sd_total"]
+        out["sports"][sport] = entry
+    text = json.dumps(out, separators=(",", ":"))
+    if not args.embed:
+        print(text)
+        return
+    import re
+    with open(args.embed) as fh:
+        html = fh.read()
+    pattern = re.compile(r'(<script id="snapshot" type="application/json">)(.*?)(</script>)', re.S)
+    if not pattern.search(html):
+        sys.exit(f'{args.embed}: no <script id="snapshot" type="application/json"> block found')
+    with open(args.embed, "w") as fh:
+        fh.write(pattern.sub(lambda m: m.group(1) + text + m.group(3), html, count=1))
+    print(f"Embedded {len(text)} bytes of ratings into {args.embed}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -564,6 +610,11 @@ def main():
     p.add_argument("--lam-split", dest="lam_split", type=float)
     p.add_argument("--quiet", action="store_true", help="print one summary line per variant")
     p.set_defaults(fn=cmd_backtest)
+
+    p = sub.add_parser("snapshot", help="export both sports' current ratings as JSON for the 3D viewer")
+    p.add_argument("--season", type=int, default=default_season())
+    p.add_argument("--embed", metavar="HTML", help="write the JSON into this page's snapshot block instead of printing")
+    p.set_defaults(fn=cmd_snapshot)
 
     args = ap.parse_args()
     args.fn(args)

@@ -18,4 +18,6 @@ python3 tools/ratings/team_ratings.py matchup nfl TEN HOU --spread 7.5 --ml 310 
 python3 tools/ratings/team_ratings.py backtest nfl --season 2025
 ```
 
+| `snapshot [--embed web/ratings-3d.html]` | Exports both sports' current ratings as JSON, or writes them into the 3D page |
+
 Tuning flags (`--carry`, `--lam-main`, `--lam-split`, `--xg-weight`, `--trust`) are documented in `--help`.

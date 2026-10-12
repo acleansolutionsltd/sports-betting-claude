@@ -124,6 +124,9 @@ sports-betting-claude/
 │       ├── anti-bias-checklist.md     ← cognitive bias detection
 │       └── output-format.md           ← standardized bet slip format
 │
+├── web/
+│   └── ratings-3d.html                ← single-file three.js viewer: ratings landscape + matchup
+│
 ├── tools/
 │   ├── props/                         ← Python: player game logs (Sofascore/ESPN) + prop pricer
 │   └── ratings/                       ← Python: team ratings, matchup projections, backtests

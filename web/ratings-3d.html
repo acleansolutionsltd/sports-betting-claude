@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ratings Landscape</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --ink: #161a21; --muted: #5d6675; --line: #dde1e8;
+    --home: #1f6fd1; --away: #d1621f; --draw: #8a93a3; --good: #178a5a; --warn: #b7791f; --bad: #c0392b;
+    --floor: #e9ecf1; --grid: #cfd5de; --focus: #1f6fd1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1015; --panel: #151a22; --ink: #e6e9ef; --muted: #8b94a3; --line: #262d39;
+      --home: #5aa9ff; --away: #ff9a56; --draw: #6b7585; --good: #3ecf8e; --warn: #f0b429; --bad: #ef6a6a;
+      --floor: #121720; --grid: #2a3240; --focus: #5aa9ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1015; --panel: #151a22; --ink: #e6e9ef; --muted: #8b94a3; --line: #262d39;
+    --home: #5aa9ff; --away: #ff9a56; --draw: #6b7585; --good: #3ecf8e; --warn: #f0b429; --bad: #ef6a6a;
+    --floor: #121720; --grid: #2a3240; --focus: #5aa9ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .app > * { min-width: 0; }
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) 410px; grid-template-rows: auto 1fr; height: 100%; }
+  header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+           padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 16px; font-weight: 650; margin: 0; letter-spacing: .01em; }
+  .meta { color: var(--muted); font-size: 12px; margin-left: auto; text-align: right; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { background: transparent; border: 0; padding: 6px 12px; cursor: pointer; color: var(--muted); }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+  .stage { position: relative; min-height: 0; overflow: hidden; }
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  #gl:active { cursor: grabbing; }
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .lbl { position: absolute; transform: translate(-50%, -50%); font-size: 11px; font-weight: 600; color: var(--ink);
+         text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 6px var(--bg); white-space: nowrap; will-change: transform; }
+  .lbl.axis { color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  .lbl.tick { color: var(--muted); font-weight: 500; font-size: 10px; }
+  .lbl.sel-home { color: var(--home); font-size: 12px; }
+  .lbl.sel-away { color: var(--away); font-size: 12px; }
+  #tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+         padding: 8px 10px; font-size: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.18); display: none; z-index: 5; min-width: 150px; }
+  #tip b { display: block; margin-bottom: 2px; font-size: 13px; }
+  #tip span { color: var(--muted); }
+  .hint { position: absolute; left: 12px; bottom: 10px; color: var(--muted); font-size: 12px; pointer-events: none; max-width: 70%;
+          background: color-mix(in srgb, var(--bg) 82%, transparent); padding: 4px 8px; border-radius: 6px; }
+  #fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center;
+              padding: 24px; color: var(--muted); }
+
+  aside { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; min-height: 0; padding: 14px 16px 24px; }
+  aside h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 18px 0 8px; }
+  aside h2:first-child { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 5px 3px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 11px; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+  th[aria-sort] { color: var(--ink); }
+  .tw { overflow-x: auto; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  tr.sel-home td:first-child { box-shadow: inset 3px 0 var(--home); }
+  tr.sel-away td:first-child { box-shadow: inset 3px 0 var(--away); }
+  .pos { color: var(--good); } .neg { color: var(--bad); }
+
+  .field { display: grid; gap: 4px; margin-bottom: 10px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  select, input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; }
+  input[type="range"] { width: 100%; accent-color: var(--home); }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 8px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .big { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .warn { border: 1px solid var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); border-radius: 8px;
+          padding: 8px 10px; margin: 10px 0; font-size: 12.5px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  .cand { color: var(--good); font-weight: 650; }
+  .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+  .btn { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  .btn:hover { border-color: var(--muted); }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 56vh auto; height: auto; min-height: 100%; }
+    aside { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+    .meta { margin-left: 0; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Ratings Landscape</h1>
+    <div class="seg" role="group" aria-label="Sport">
+      <button id="sp-epl" aria-pressed="true">Premier League</button>
+      <button id="sp-nfl" aria-pressed="false">NFL</button>
+    </div>
+    <div class="seg" role="group" aria-label="View">
+      <button id="v-land" aria-pressed="true">Landscape</button>
+      <button id="v-match" aria-pressed="false">Matchup</button>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <main class="stage">
+    <canvas id="gl" aria-label="3D chart of team ratings. A sortable table with the same data is in the side panel." role="img"></canvas>
+    <div id="labels" aria-hidden="true"></div>
+    <div id="tip" role="status"></div>
+    <div class="hint" id="hint"></div>
+    <div id="fallback">3D graphics are not available in this browser. The table on the right has the same ratings.</div>
+  </main>
+
+  <aside id="panel" aria-live="polite"></aside>
+</div>
+
+<script id="snapshot" type="application/json">{"generated":"2026-10-12 07:16 UTC","sports":{"nfl":{"label":"NFL","season":2026,"games":78,"unit":"pts","mu_h":23.544,"mu_a":22.884,"lam_main":6.0,"teams":{"DEN":{"name":"Denver Broncos","short":"DEN","gp":5,"off":-0.847,"dfn":-1.547,"oh":0.126,"dh":-0.051},"IND":{"name":"Indianapolis Colts","short":"IND","gp":5,"off":1.721,"dfn":1.969,"oh":-0.062,"dh":-0.036},"CIN":{"name":"Cincinnati Bengals","short":"CIN","gp":5,"off":1.85,"dfn":0.795,"oh":-0.008,"dh":0.042},"WSH":{"name":"Washington Commanders","short":"WSH","gp":5,"off":-0.66,"dfn":3.333,"oh":0.103,"dh":-0.009},"TEN":{"name":"Tennessee Titans","short":"TEN","gp":5,"off":-5.778,"dfn":0.605,"oh":-0.036,"dh":0.106},"GB":{"name":"Green Bay Packers","short":"GB","gp":5,"off":-0.649,"dfn":-0.276,"oh":0.01,"dh":-0.051},"HOU":{"name":"Houston Texans","short":"HOU","gp":5,"off":-1.15,"dfn":-1.895,"oh":-0.014,"dh":0.172},"LAR":{"name":"Los Angeles Rams","short":"LAR","gp":4,"off":1.189,"dfn":-1.582,"oh":-0.005,"dh":-0.111},"DET":{"name":"Detroit Lions","short":"DET","gp":5,"off":4.399,"dfn":2.967,"oh":-0.043,"dh":-0.015},"NYJ":{"name":"New York Jets","short":"NYJ","gp":5,"off":-3.17,"dfn":-0.45,"oh":-0.017,"dh":-0.022},"PIT":{"name":"Pittsburgh Steelers","short":"PIT","gp":5,"off":-0.451,"dfn":-0.82,"oh":0.126,"dh":-0.055},"DAL":{"name":"Dallas Cowboys","short":"DAL","gp":5,"off":2.563,"dfn":3.407,"oh":-0.037,"dh":-0.066},"BUF":{"name":"Buffalo Bills","short":"BUF","gp":4,"off":4.391,"dfn":1.453,"oh":-0.017,"dh":-0.027},"LAC":{"name":"Los Angeles Chargers","short":"LAC","gp":5,"off":-3.502,"dfn":0.396,"oh":-0.101,"dh":0.035},"LV":{"name":"Las Vegas Raiders","short":"LV","gp":5,"off":0.203,"dfn":2.101,"oh":-0.007,"dh":-0.085},"MIN":{"name":"Minnesota Vikings","short":"MIN","gp":5,"off":-1.381,"dfn":-4.848,"oh":0.096,"dh":0.115},"JAX":{"name":"Jacksonville Jaguars","short":"JAX","gp":5,"off":1.934,"dfn":-4.376,"oh":0.173,"dh":-0.078},"PHI":{"name":"Philadelphia Eagles","short":"PHI","gp":5,"off":-2.173,"dfn":-0.874,"oh":0.046,"dh":-0.024},"CAR":{"name":"Carolina Panthers","short":"CAR","gp":4,"off":1.703,"dfn":1.16,"oh":0.066,"dh":0.261},"SF":{"name":"San Francisco 49ers","short":"SF","gp":5,"off":3.894,"dfn":-2.14,"oh":0.008,"dh":-0.023},"NO":{"name":"New Orleans Saints","short":"NO","gp":5,"off":-0.829,"dfn":2.636,"oh":-0.039,"dh":0.188},"ATL":{"name":"Atlanta Falcons","short":"ATL","gp":5,"off":-0.351,"dfn":0.452,"oh":-0.223,"dh":0.124},"CHI":{"name":"Chicago Bears","short":"CHI","gp":5,"off":1.143,"dfn":-0.938,"oh":-0.155,"dh":-0.257},"SEA":{"name":"Seattle Seahawks","short":"SEA","gp":5,"off":2.302,"dfn":-1.948,"oh":-0.023,"dh":0.015},"NE":{"name":"New England Patriots","short":"NE","gp":5,"off":0.483,"dfn":-3.164,"oh":0.174,"dh":-0.113},"KC":{"name":"Kansas City Chiefs","short":"KC","gp":4,"off":1.809,"dfn":-1.927,"oh":0.056,"dh":-0.002},"TB":{"name":"Tampa Bay Buccaneers","short":"TB","gp":5,"off":-1.348,"dfn":-0.076,"oh":-0.077,"dh":0.01},"NYG":{"name":"New York Giants","short":"NYG","gp":5,"off":-1.665,"dfn":-0.112,"oh":0.065,"dh":-0.102},"MIA":{"name":"Miami Dolphins","short":"MIA","gp":5,"off":-4.154,"dfn":1.205,"oh":0.057,"dh":0.016},"BAL":{"name":"Baltimore Ravens","short":"BAL","gp":5,"off":2.227,"dfn":0.608,"oh":-0.156,"dh":0.024},"CLE":{"name":"Cleveland Browns","short":"CLE","gp":5,"off":-2.852,"dfn":-0.396,"oh":0.081,"dh":-0.035},"ARI":{"name":"Arizona Cardinals","short":"ARI","gp":5,"off":-0.849,"dfn":4.28,"oh":-0.167,"dh":0.054}},"sd_margin":13.2,"sd_total":9.5},"epl":{"label":"Premier League","season":2026,"games":59,"unit":"goals","mu_h":1.586,"mu_a":1.387,"lam_main":16.0,"teams":{"Nottingham Forest":{"name":"Nottingham Forest","short":"NFO","gp":6,"off":-0.102,"dfn":-0.042,"oh":-0.028,"dh":-0.011},"Brighton & Hove Albion":{"name":"Brighton & Hove Albion","short":"BHA","gp":6,"off":0.296,"dfn":-0.129,"oh":-0.0,"dh":-0.007},"Tottenham Hotspur":{"name":"Tottenham Hotspur","short":"TOT","gp":6,"off":-0.22,"dfn":0.035,"oh":-0.001,"dh":0.001},"Newcastle United":{"name":"Newcastle United","short":"NEW","gp":5,"off":-0.011,"dfn":0.126,"oh":0.002,"dh":0.003},"Fulham":{"name":"Fulham","short":"FUL","gp":6,"off":-0.119,"dfn":0.039,"oh":0.013,"dh":0.014},"Sunderland":{"name":"Sunderland","short":"SUN","gp":6,"off":-0.099,"dfn":0.017,"oh":-0.014,"dh":-0.01},"Crystal Palace":{"name":"Crystal Palace","short":"CRY","gp":6,"off":-0.098,"dfn":0.143,"oh":0.001,"dh":0.014},"Ipswich Town":{"name":"Ipswich Town","short":"IPS","gp":6,"off":-0.128,"dfn":0.265,"oh":-0.009,"dh":-0.017},"Arsenal":{"name":"Arsenal","short":"ARS","gp":6,"off":0.217,"dfn":-0.4,"oh":0.009,"dh":-0.004},"Aston Villa":{"name":"Aston Villa","short":"AVL","gp":6,"off":-0.058,"dfn":0.046,"oh":-0.001,"dh":-0.005},"Liverpool FC":{"name":"Liverpool FC","short":"LIV","gp":6,"off":0.053,"dfn":-0.07,"oh":-0.01,"dh":0.011},"Bournemouth":{"name":"Bournemouth","short":"BOU","gp":6,"off":-0.0,"dfn":0.058,"oh":-0.001,"dh":-0.007},"Chelsea":{"name":"Chelsea","short":"CHE","gp":6,"off":0.196,"dfn":0.106,"oh":0.015,"dh":-0.003},"Manchester United":{"name":"Manchester United","short":"MUN","gp":6,"off":0.186,"dfn":-0.007,"oh":0.01,"dh":0.001},"Leeds United":{"name":"Leeds United","short":"LEE","gp":6,"off":-0.043,"dfn":-0.078,"oh":0.001,"dh":-0.001},"Manchester City":{"name":"Manchester City","short":"MCI","gp":6,"off":0.421,"dfn":-0.237,"oh":0.002,"dh":0.02},"Everton":{"name":"Everton","short":"EVE","gp":6,"off":-0.093,"dfn":-0.104,"oh":0.0,"dh":-0.002},"Hull City":{"name":"Hull City","short":"HUL","gp":6,"off":-0.22,"dfn":0.086,"oh":-0.002,"dh":0.002},"Brentford":{"name":"Brentford","short":"BRE","gp":6,"off":0.132,"dfn":-0.064,"oh":0.012,"dh":-0.012},"Coventry City":{"name":"Coventry City","short":"COV","gp":5,"off":-0.31,"dfn":0.209,"oh":-0.001,"dh":0.014}}}}}</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+"use strict";
+
+/* ───────────── data ───────────── */
+let SNAP = JSON.parse(document.getElementById("snapshot").textContent);
+const state = { sport: "epl", view: "land", home: null, away: null, hover: null, sort: { key: "net", dir: -1 },
+                trust: 0.30, inputs: {} };
+
+const sportData = () => SNAP.sports[state.sport];
+function teamList() {
+  const d = sportData();
+  return Object.entries(d.teams).map(([id, t]) => ({
+    id, name: t.name, short: t.short, gp: t.gp, off: t.off, def: -t.dfn, net: t.off - t.dfn,
+    oh: t.oh, dh: t.dh, dfn: t.dfn,
+  }));
+}
+
+/* ───────────── maths (ports of tools/ratings/team_ratings.py) ───────────── */
+function erfc(x) {                       // Numerical Recipes, |error| < 1.2e-7
+  const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+  const r = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
+            t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? r : 2 - r;
+}
+const cdf = (z) => 0.5 * erfc(-z / Math.SQRT2);
+const pOver = (line, mean, sd) => 0.5 * erfc((line - mean) / (sd * Math.SQRT2));
+function ppf(p) { let lo = -8, hi = 8; for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (cdf(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+function poisson(k, lam) { let f = 1; for (let i = 2; i <= k; i++) f *= i; return Math.exp(-lam) * Math.pow(lam, k) / f; }
+
+function parseOdds(text) {
+  if (text == null) return null;
+  text = String(text).trim();
+  if (!text) return null;
+  let v;
+  if (text.includes("/")) { const [a, b] = text.split("/").map(Number); v = a / b + 1; }
+  else {
+    const n = Number(text);
+    if (!isFinite(n)) return null;
+    if (text[0] === "+" || text[0] === "-" || Math.abs(n) >= 100) v = 1 + (n > 0 ? n / 100 : 100 / -n);
+    else v = n;
+  }
+  return isFinite(v) && v > 1 ? v : null;
+}
+const pct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const sgn = (x, d = 1) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(d);
+
+function project(H, A, neutral = false) {
+  const d = sportData(), th = d.teams[H], ta = d.teams[A];
+  const oh = neutral ? 0 : th.oh, dhH = neutral ? 0 : th.dh, oa = neutral ? 0 : ta.oh, dhA = neutral ? 0 : ta.dh;
+  const muH = neutral ? (d.mu_h + d.mu_a) / 2 : d.mu_h, muA = neutral ? (d.mu_h + d.mu_a) / 2 : d.mu_a;
+  return {
+    hs: muH + th.off + oh + ta.dfn - dhA,
+    as: muA + ta.off - oa + th.dfn + dhH,
+  };
+}
+function scoreGrid(lh, la, n = 10) {
+  const g = []; let z = 0;
+  for (let i = 0; i <= n; i++) { g.push([]); for (let j = 0; j <= n; j++) { const p = poisson(i, lh) * poisson(j, la); g[i].push(p); z += p; } }
+  for (const row of g) for (let j = 0; j <= n; j++) row[j] /= z;
+  return g;
+}
+
+/* ───────────── theme / colours ───────────── */
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const col = (name) => new THREE.Color(css(name));
+
+/* ───────────── three.js scene ───────────── */
+const canvas = document.getElementById("gl");
+const labelsEl = document.getElementById("labels");
+let renderer, scene, camera, dyn, pickables = [];
+const labels = [];
+const cam = { theta: 0.75, phi: 1.0, radius: 17, target: new THREE.Vector3(0, 0.6, 0) };
+let dirty = true;
+
+function initGL() {
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  } catch (e) {
+    document.getElementById("fallback").style.display = "flex";
+    canvas.style.display = "none";
+    return false;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x667085, 0.95));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.75);
+  sun.position.set(6, 12, 8);
+  scene.add(sun);
+  dyn = new THREE.Group();
+  scene.add(dyn);
+  resize();
+  return true;
+}
+function resize() {
+  if (!renderer) return;
+  const r = canvas.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / Math.max(r.height, 1);
+  camera.updateProjectionMatrix();
+  dirty = true;
+}
+function applyCam() {
+  const { theta, phi, radius, target } = cam;
+  camera.position.set(target.x + radius * Math.sin(phi) * Math.sin(theta), target.y + radius * Math.cos(phi),
+                      target.z + radius * Math.sin(phi) * Math.cos(theta));
+  camera.lookAt(target);
+}
+function clearDyn() {
+  while (dyn.children.length) {
+    const o = dyn.children.pop();
+    o.traverse?.((n) => { n.geometry?.dispose(); if (n.material) [].concat(n.material).forEach((m) => m.dispose()); });
+  }
+  pickables = [];
+  labelsEl.replaceChildren();
+  labels.length = 0;
+}
+function addLabel(text, pos, cls = "") {
+  const el = document.createElement("div");
+  el.className = "lbl " + cls;
+  el.textContent = text;
+  labelsEl.appendChild(el);
+  const l = { el, pos: pos.clone(), id: null };
+  labels.push(l);
+  return l;
+}
+function placeLabels() {
+  const r = canvas.getBoundingClientRect(), v = new THREE.Vector3();
+  for (const l of labels) {
+    v.copy(l.pos).project(camera);
+    const behind = v.z > 1;
+    l.el.style.display = behind ? "none" : "block";
+    l.el.style.left = ((v.x * 0.5 + 0.5) * r.width) + "px";
+    l.el.style.top = ((-v.y * 0.5 + 0.5) * r.height) + "px";
+  }
+}
+function floorAndGrid(size, divisions) {
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(size * 2, size * 2),
+    new THREE.MeshBasicMaterial({ color: col("--floor") }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.01;
+  dyn.add(floor);
+  const grid = new THREE.GridHelper(size * 2, divisions, col("--grid"), col("--grid"));
+  grid.material.transparent = true; grid.material.opacity = 0.7;
+  dyn.add(grid);
+}
+
+/* ───────────── landscape ───────────── */
+function buildLandscape() {
+  clearDyn();
+  const teams = teamList();
+  const d = sportData();
+  floorAndGrid(7, 14);
+  const maxOff = Math.max(...teams.map((t) => Math.abs(t.off)), 1e-6);
+  const maxDef = Math.max(...teams.map((t) => Math.abs(t.def)), 1e-6);
+  const maxNet = Math.max(...teams.map((t) => Math.abs(t.net)), 1e-6);
+  const X = (t) => (t.off / maxOff) * 5.2, Z = (t) => -(t.def / maxDef) * 5.2;
+  const home = col("--home"), bad = col("--bad"), good = col("--good"), draw = col("--draw");
+
+  for (const t of teams) {
+    const h = (t.net / maxNet) * 3.2, ah = Math.max(Math.abs(h), 0.06);
+    const shrink = d.lam_main / (t.gp + d.lam_main);            // share of the rating still coming from the prior
+    const base = t.net >= 0 ? draw.clone().lerp(good, Math.min(t.net / maxNet, 1)) : draw.clone().lerp(bad, Math.min(-t.net / maxNet, 1));
+    const mat = new THREE.MeshStandardMaterial({ color: base, roughness: 0.55, metalness: 0.05 });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.42, ah, 0.42), mat);
+    m.position.set(X(t), h >= 0 ? ah / 2 : -ah / 2, Z(t));
+    m.userData = { id: t.id, base: base.clone() };
+    dyn.add(m); pickables.push(m);
+
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.3 + 0.6 * shrink, 40),
+      new THREE.MeshBasicMaterial({ color: draw, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(X(t), 0.015, Z(t));
+    dyn.add(ring);
+
+    const lp = new THREE.Vector3(X(t), Math.max(h, 0) + 0.45, Z(t));
+    const l = addLabel(t.short, lp);
+    l.id = t.id;
+  }
+  // axes
+  const ax = (a, b) => {
+    const g = new THREE.BufferGeometry().setFromPoints([a, b]);
+    dyn.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: col("--muted") })));
+  };
+  ax(new THREE.Vector3(-6, 0.01, 0), new THREE.Vector3(6, 0.01, 0));
+  ax(new THREE.Vector3(0, 0.01, -6), new THREE.Vector3(0, 0.01, 6));
+  addLabel("Better attack →", new THREE.Vector3(5.2, 0.1, 0.6), "axis");
+  addLabel("← Weaker attack", new THREE.Vector3(-5.2, 0.1, 0.6), "axis");
+  addLabel("Better defence (far side) ↑", new THREE.Vector3(1.2, 0.1, -6.3), "axis");
+  addLabel("Weaker defence (near side) ↓", new THREE.Vector3(1.4, 0.1, 6.3), "axis");
+  document.getElementById("hint").textContent =
+    "Height = net rating (attack + defence). Far-right = best. Rings show how much of a rating is still last season's — wide ring = few games. Click two teams to compare.";
+  styleSelection();
+  dirty = true;
+}
+
+/* ───────────── matchup ───────────── */
+let matchResult = null;
+function buildMatchup() {
+  clearDyn();
+  matchResult = null;
+  const { home, away } = state;
+  if (!home || !away || home === away) { floorAndGrid(7, 14); document.getElementById("hint").textContent = "Pick a home and an away team in the panel (or click two teams in the landscape)."; dirty = true; return; }
+  const d = sportData();
+  const neutral = !!state.inputs.neutral;
+  const pj = project(home, away, neutral);
+  if (state.sport === "epl") buildScoreSurface(pj);
+  else buildMarginRibbon(pj, neutral);
+  dirty = true;
+}
+function buildScoreSurface(pj) {
+  const lh = Math.max(pj.hs, 0.15), la = Math.max(pj.as, 0.15), N = 7;
+  const g = scoreGrid(lh, la, 10);
+  floorAndGrid(5, 10);
+  let max = 0; for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) max = Math.max(max, g[i][j]);
+  const sc = 3.4 / max, hc = col("--home"), ac = col("--away"), dc = col("--draw");
+  const step = 1.0, off = -(N * step) / 2;
+  for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+    const p = g[i][j], h = Math.max(p * sc, 0.02);
+    const c = i > j ? hc : i < j ? ac : dc;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.78, h, 0.78),
+      new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, transparent: true, opacity: p > 0.002 ? 1 : 0.35 }));
+    m.position.set(off + i * step, h / 2, off + j * step);
+    dyn.add(m);
+    if (p >= max * 0.55) addLabel(i + "–" + j, new THREE.Vector3(off + i * step, h + 0.3, off + j * step), "tick");
+  }
+  const d = sportData();
+  const nearZ = off + N * step + 0.9, nearX = off + N * step + 0.9;
+  for (let k = 0; k <= N; k++) {
+    addLabel(String(k), new THREE.Vector3(off + k * step, 0.05, nearZ), "tick");
+    addLabel(String(k), new THREE.Vector3(nearX, 0.05, off + k * step), "tick");
+  }
+  addLabel(`${d.teams[state.home].short} goals →`, new THREE.Vector3(0, 0.05, nearZ + 1.0), "axis");
+  addLabel(`${d.teams[state.away].short} goals →`, new THREE.Vector3(nearX + 1.6, 0.05, 0), "axis");
+  cam.target.set(0, 0.8, 0);
+  document.getElementById("hint").textContent =
+    "Each bar is one exact scoreline. Blue = home win, orange = away win, grey = draw (the diagonal). Taller = more likely.";
+}
+function buildMarginRibbon(pj, neutral) {
+  const d = sportData(), sd = d.sd_margin, margin = pj.hs - pj.as;
+  floorAndGrid(8, 16);
+  const lo = -30, hi = 30, w = 0.26, hc = col("--home"), ac = col("--away");
+  const pdf = (x) => Math.exp(-0.5 * ((x - margin) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+  const sc = 4.2 / pdf(margin), x0 = -((hi - lo) * w) / 2;
+  const X = (m) => x0 + (m - lo) * w;
+  for (let m = lo; m <= hi; m++) {
+    const h = Math.max(pdf(m) * sc, 0.02);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w * 0.88, h, 1.1),
+      new THREE.MeshStandardMaterial({ color: m > 0 ? hc : ac, roughness: 0.5 }));
+    mesh.position.set(X(m), h / 2, 0);
+    dyn.add(mesh);
+  }
+  const marker = (m, color, text, z) => {
+    const x = X(Math.max(lo, Math.min(hi, m)));
+    const mk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 5.2, 0.07), new THREE.MeshBasicMaterial({ color }));
+    mk.position.set(x, 2.6, 0.7); dyn.add(mk);
+    addLabel(text, new THREE.Vector3(x, 5.5 + z, 0.7), "");
+  };
+  marker(margin, col("--ink"), `model ${sgn(margin)}`, 0);
+  const mm = marketMargin();
+  if (mm != null) marker(mm.margin, col("--warn"), `market ${sgn(mm.margin)}`, 0.6);
+  marker(0, col("--muted"), "level", 1.0);
+  for (let m = -28; m <= 28; m += 7) addLabel(String(m), new THREE.Vector3(X(m), 0.05, 1.4), "tick");
+  addLabel(`← ${d.teams[state.away].short} win by (points)`, new THREE.Vector3(X(-20), 0.05, 2.4), "axis");
+  addLabel(`${d.teams[state.home].short} win by (points) →`, new THREE.Vector3(X(20), 0.05, 2.4), "axis");
+  cam.target.set(0, 1.8, 0);
+  document.getElementById("hint").textContent =
+    "The bars are the spread of likely margins (NFL results vary by ~13 points either way). Where the model and market markers sit apart is where the question is.";
+}
+
+/* ───────────── selection / picking ───────────── */
+function styleSelection() {
+  if (state.view !== "land") return;
+  for (const m of pickables) {
+    const id = m.userData.id;
+    const c = id === state.home ? col("--home") : id === state.away ? col("--away") : m.userData.base;
+    m.material.color.copy(c);
+    m.material.emissive = new THREE.Color(id === state.hover ? 0x333333 : 0x000000);
+  }
+  for (const l of labels) {
+    l.el.classList.toggle("sel-home", l.id != null && l.id === state.home);
+    l.el.classList.toggle("sel-away", l.id != null && l.id === state.away);
+  }
+  dirty = true;
+}
+function selectTeam(id) {
+  if (!state.home || (state.home && state.away)) { state.home = id; state.away = null; }
+  else if (id !== state.home) { state.away = id; }
+  renderPanel(); styleSelection();
+}
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+function pick(ev) {
+  if (!pickables.length) return null;
+  const r = canvas.getBoundingClientRect();
+  ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(pickables)[0];
+  return hit ? hit.object.userData.id : null;
+}
+
+/* ───────────── camera input (drag to orbit, wheel / pinch to zoom) ───────────── */
+const pts = new Map();
+let down = null, pinch = 0;
+canvas.addEventListener("pointerdown", (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  down = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 };
+  if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+});
+canvas.addEventListener("pointermove", (e) => {
+  const p = pts.get(e.pointerId);
+  if (!p) { hover(e); return; }
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (pts.size === 2) {
+    const [a, b] = [...pts.values()], dist = Math.hypot(a.x - b.x, a.y - b.y);
+    cam.radius = Math.min(40, Math.max(5, cam.radius * (pinch / dist))); pinch = dist;
+  } else {
+    cam.theta -= dx * 0.006;
+    cam.phi = Math.min(1.5, Math.max(0.15, cam.phi - dy * 0.006));
+  }
+  if (down) down.moved += Math.abs(dx) + Math.abs(dy);
+  dirty = true;
+});
+const end = (e) => {
+  pts.delete(e.pointerId);
+  if (down && pts.size === 0 && down.moved < 5 && performance.now() - down.t < 600 && state.view === "land") {
+    const id = pick(e); if (id) selectTeam(id);
+  }
+  if (pts.size === 0) down = null;
+};
+canvas.addEventListener("pointerup", end);
+canvas.addEventListener("pointercancel", end);
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  cam.radius = Math.min(40, Math.max(5, cam.radius * Math.exp(e.deltaY * 0.0012))); dirty = true;
+}, { passive: false });
+
+const tip = document.getElementById("tip");
+function hover(e) {
+  if (state.view !== "land") { tip.style.display = "none"; return; }
+  const id = pick(e);
+  if (id !== state.hover) { state.hover = id; styleSelection(); }
+  if (!id) { tip.style.display = "none"; return; }
+  const t = teamList().find((x) => x.id === id), u = sportData().unit;
+  tip.innerHTML = `<b>${t.name}</b><span>${t.gp} games</span><br>Attack ${sgn(t.off, 2)} ${u}<br>Defence ${sgn(t.def, 2)} ${u}<br>Net ${sgn(t.net, 2)}<br>
+    <span>Home/away: attack ${sgn(t.oh, 2)}, defence ${sgn(-t.dh, 2)} (shrunk to near zero)</span>`;
+  const r = canvas.getBoundingClientRect();
+  tip.style.display = "block";
+  tip.style.left = Math.min(e.clientX - r.left + 14, r.width - 220) + "px";
+  tip.style.top = Math.max(e.clientY - r.top - 10, 8) + "px";
+}
+canvas.addEventListener("pointerleave", () => { tip.style.display = "none"; state.hover = null; styleSelection(); });
+
+/* ───────────── market maths for the panel ───────────── */
+function marketMargin() {
+  const d = sportData();
+  if (state.sport !== "nfl") return null;
+  const i = state.inputs, spread = parseFloat(i.spread);
+  if (isFinite(spread) && String(i.spread).trim() !== "") return { margin: -spread, source: "spread" };
+  const dh = parseOdds(i.mlH), da = parseOdds(i.mlA);
+  if (dh && da) { const fh = (1 / dh) / (1 / dh + 1 / da); return { margin: d.sd_margin * ppf(fh), source: "moneyline" }; }
+  return null;
+}
+function evRow(label, p, dec, fair, raw) {
+  const ev = p * dec - 1, edge = fair != null ? p - fair : null;
+  const cand = ev >= 0.02 && (fair == null || edge >= 0.02);
+  return `<tr><td>${label}</td><td>${pct(p)}<br><span style="color:var(--muted)">raw ${pct(raw)}</span></td>
+    <td>${pct(1 / dec)}${fair != null ? `<br><span style="color:var(--muted)">fair ${pct(fair)}</span>` : ""}</td>
+    <td>${edge != null ? sgn(edge * 100) + "%" : "–"}</td>
+    <td class="${ev >= 0 ? "pos" : "neg"}">${sgn(ev * 100)}%${cand ? '<br><span class="cand">candidate</span>' : ""}</td></tr>`;
+}
+const anchor = (m, mk) => state.trust * m + (1 - state.trust) * mk;
+
+function marketHTML(pj) {
+  const d = sportData(), i = state.inputs, T = d.teams, hn = T[state.home].short, an = T[state.away].short;
+  let out = "", rows = "", warn = "";
+  if (state.sport === "epl") {
+    const g = scoreGrid(Math.max(pj.hs, .15), Math.max(pj.as, .15), 10), n = 10;
+    let ph = 0, pd = 0, pBtts = 0;
+    for (let a = 0; a <= n; a++) for (let b = 0; b <= n; b++) { if (a > b) ph += g[a][b]; else if (a === b) pd += g[a][b]; if (a > 0 && b > 0) pBtts += g[a][b]; }
+    const pa = 1 - ph - pd, line = parseFloat(i.line) || 2.5;
+    let po = 0; for (let a = 0; a <= n; a++) for (let b = 0; b <= n; b++) if (a + b > line) po += g[a][b];
+    out += `<dl class="kv"><dt>Expected goals</dt><dd>${T[state.home].short} ${pj.hs.toFixed(2)} – ${pj.as.toFixed(2)} ${T[state.away].short}</dd>
+      <dt>1X2 (model)</dt><dd>${pct(ph)} · ${pct(pd)} · ${pct(pa)}</dd>
+      <dt>Over ${line} / BTTS</dt><dd>${pct(po)} / ${pct(pBtts)}</dd></dl>`;
+    const od = [parseOdds(i.oH), parseOdds(i.oD), parseOdds(i.oA)];
+    if (od.every(Boolean)) {
+      const imp = od.map((x) => 1 / x), tot = imp.reduce((a, b) => a + b, 0), fair = imp.map((x) => x / tot), raw = [ph, pd, pa];
+      const used = raw.map((m, k) => anchor(m, fair[k]));
+      const gap = Math.max(...raw.map((m, k) => Math.abs(m - fair[k])));
+      if (gap >= 0.08) warn = `The model is up to ${Math.round(gap * 100)} points from the market. The market sees lineups and injuries this team-level model cannot — find out why before trusting any edge.`;
+      rows += evRow(hn + " win", used[0], od[0], fair[0], raw[0]) + evRow("Draw", used[1], od[1], fair[1], raw[1]) + evRow(an + " win", used[2], od[2], fair[2], raw[2]);
+    }
+    const ou = [parseOdds(i.ouO), parseOdds(i.ouU)];
+    if (ou.every(Boolean)) {
+      const fo = (1 / ou[0]) / (1 / ou[0] + 1 / ou[1]), p = anchor(po, fo);
+      rows += evRow(`Over ${line}`, p, ou[0], fo, po) + evRow(`Under ${line}`, 1 - p, ou[1], 1 - fo, 1 - po);
+    }
+  } else {
+    const sd = d.sd_margin, margin = pj.hs - pj.as, total = pj.hs + pj.as;
+    const mm = marketMargin(), used = mm ? anchor(margin, mm.margin) : margin;
+    const totalLine = parseFloat(i.total), usedTotal = isFinite(totalLine) ? anchor(total, totalLine) : total;
+    const pHraw = cdf(margin / sd), pH = cdf(used / sd);
+    out += `<dl class="kv"><dt>Projected score</dt><dd>${hn} ${pj.hs.toFixed(1)} – ${pj.as.toFixed(1)} ${an}</dd>
+      <dt>Margin / total</dt><dd>${sgn(margin)} / ${total.toFixed(1)}</dd>
+      <dt>${hn} win (model)</dt><dd>${pct(pHraw)}</dd>
+      ${mm ? `<dt>Market margin (${mm.source})</dt><dd>${sgn(mm.margin)}</dd><dt>Anchored margin</dt><dd>${sgn(used)} → ${hn} win ${pct(pH)}</dd>` : ""}</dl>`;
+    if (mm && Math.abs(margin - mm.margin) >= 3.5)
+      warn = `The model is ${Math.abs(margin - mm.margin).toFixed(1)} points from the market. The market sees injuries, QB news and matchups this team-level model cannot — find out why before trusting any edge.`;
+    const sp = parseFloat(i.spread);
+    if (isFinite(sp) && String(i.spread).trim() !== "") {
+      const dec = parseOdds(i.spreadOdds) || parseOdds("-110"), p = cdf((used + sp) / sd), raw = cdf((margin + sp) / sd);
+      rows += evRow(`${hn} ${sp > 0 ? "+" : ""}${sp}`, p, dec, null, raw) + evRow(`${an} ${-sp > 0 ? "+" : ""}${-sp}`, 1 - p, dec, null, 1 - raw);
+    }
+    if (isFinite(totalLine)) {
+      const dec = parseOdds(i.totalOdds) || parseOdds("-110"), p = pOver(totalLine, usedTotal, d.sd_total), raw = pOver(totalLine, total, d.sd_total);
+      rows += evRow(`Over ${totalLine}`, p, dec, null, raw) + evRow(`Under ${totalLine}`, 1 - p, dec, null, 1 - raw);
+    }
+    const dh = parseOdds(i.mlH), da = parseOdds(i.mlA);
+    if (dh && da) {
+      const fh = (1 / dh) / (1 / dh + 1 / da);
+      rows += evRow(hn + " ML", pH, dh, fh, pHraw) + evRow(an + " ML", 1 - pH, da, 1 - fh, 1 - pHraw);
+    }
+  }
+  if (warn) out += `<div class="warn">⚠ ${warn}</div>`;
+  if (rows) out += `<div class="tw"><table><thead><tr><th>Bet</th><th>Model</th><th>Book</th><th>Edge</th><th>EV</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note">Probabilities are blended ${Math.round(state.trust * 100)}% model / ${Math.round((1 - state.trust) * 100)}% market. “Candidate” = at least +2% edge and EV. Not a bet recommendation: check lineups and injuries first.</p>`;
+  else out += `<p class="note">Enter market prices above to compare the model with the book.</p>`;
+  return out;
+}
+
+/* ───────────── side panel ───────────── */
+const panel = document.getElementById("panel");
+function teamOptions(sel) {
+  return `<option value="">Select…</option>` + teamList().sort((a, b) => a.name.localeCompare(b.name))
+    .map((t) => `<option value="${t.id}"${t.id === sel ? " selected" : ""}>${t.name}</option>`).join("");
+}
+function renderPanel() {
+  const d = sportData();
+  document.getElementById("meta").innerHTML =
+    `${d.label} ${d.season} · ${d.games} games · snapshot ${SNAP.generated}<br><button class="btn" id="load" type="button">Load newer snapshot…</button> <input id="file" type="file" accept="application/json" hidden>`;
+  document.getElementById("load").onclick = () => document.getElementById("file").click();
+  document.getElementById("file").onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const j = JSON.parse(await f.text()); if (!j.sports) throw 0; SNAP = j; state.home = state.away = null; refresh(); }
+    catch { alert("That file is not a ratings snapshot (expected the JSON from `team_ratings.py snapshot`)."); }
+  };
+  if (state.view === "land") { panel.innerHTML = tableHTML(); wireTable(); }
+  else { panel.innerHTML = matchupPanelHTML(); wireMatchup(); }
+}
+function tableHTML() {
+  const d = sportData(), rows = teamList(), { key, dir } = state.sort;
+  rows.sort((a, b) => (typeof a[key] === "string" ? a[key].localeCompare(b[key]) : a[key] - b[key]) * dir);
+  const th = (k, label) => `<th data-k="${k}" ${state.sort.key === k ? `aria-sort="${dir > 0 ? "ascending" : "descending"}"` : ""} tabindex="0">${label}${state.sort.key === k ? (dir > 0 ? " ▲" : " ▼") : ""}</th>`;
+  const num = (x) => `<span class="${x > 0.005 ? "pos" : x < -0.005 ? "neg" : ""}">${sgn(x, 2)}</span>`;
+  return `<h2>Ratings (${d.unit} per game vs average)</h2>
+    <div class="tw"><table><thead><tr>${th("name", "Team")}${th("gp", "GP")}${th("off", "Att")}${th("def", "Def")}${th("net", "Net")}</tr></thead>
+    <tbody>${rows.map((t) => `<tr data-id="${t.id}" class="${t.id === state.home ? "sel-home" : t.id === state.away ? "sel-away" : ""}" tabindex="0">
+      <td>${t.name}</td><td>${t.gp}</td><td>${num(t.off)}</td><td>${num(t.def)}</td><td>${num(t.net)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="note"><span class="swatch" style="background:var(--home)"></span>home pick &nbsp; <span class="swatch" style="background:var(--away)"></span>away pick. Click two teams (in the chart or here), then open <b>Matchup</b>.</p>
+    <p class="note">Ratings come from every result so far, adjusted for opponent strength, and start from last season's until enough games are played. Home/away form is shrunk almost to zero because backtests showed it adds noise, not signal.</p>`;
+}
+function wireTable() {
+  panel.querySelectorAll("th").forEach((h) => {
+    const go = () => { const k = h.dataset.k; state.sort = { key: k, dir: state.sort.key === k ? -state.sort.dir : (k === "name" ? 1 : -1) }; renderPanel(); };
+    h.onclick = go; h.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
+  panel.querySelectorAll("tbody tr").forEach((r) => {
+    const go = () => selectTeam(r.dataset.id);
+    r.onclick = go; r.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
+}
+function matchupPanelHTML() {
+  const i = state.inputs, nfl = state.sport === "nfl";
+  const f = (id, label, ph, val = "") => `<div class="field"><label for="${id}">${label}</label><input type="text" id="${id}" data-in="${id}" placeholder="${ph}" value="${(i[id] ?? val)}" autocomplete="off"></div>`;
+  let h = `<h2>Teams</h2><div class="row2">
+    <div class="field"><label for="selH">Home</label><select id="selH">${teamOptions(state.home)}</select></div>
+    <div class="field"><label for="selA">Away</label><select id="selA">${teamOptions(state.away)}</select></div></div>`;
+  if (nfl) h += `<label><input type="checkbox" id="neutral" ${i.neutral ? "checked" : ""}> Neutral site (no home edge)</label>`;
+  h += `<h2>Market prices (optional)</h2>`;
+  h += nfl
+    ? `<div class="row2">${f("spread", `${state.home ? sportData().teams[state.home].short : "Home"} spread`, "-7.5")}${f("spreadOdds", "Spread price", "-110")}</div>
+       <div class="row2">${f("total", "Total", "41.5")}${f("totalOdds", "Total price", "-110")}</div>
+       <div class="row2">${f("mlH", "Home moneyline", "-380")}${f("mlA", "Away moneyline", "+300")}</div>`
+    : `<div class="row3">${f("oH", "Home", "+199")}${f("oD", "Draw", "+246")}${f("oA", "Away", "+130")}</div>
+       <div class="row3">${f("line", "O/U line", "2.5")}${f("ouO", "Over", "-110")}${f("ouU", "Under", "-110")}</div>`;
+  h += `<div class="field"><label for="trust">Trust in the model: <b id="trustv">${Math.round(state.trust * 100)}%</b> (rest from market)</label>
+    <input type="range" id="trust" min="0" max="100" value="${Math.round(state.trust * 100)}"></div>`;
+  h += `<h2>Result</h2><div id="result"></div>`;
+  return h;
+}
+function wireMatchup() {
+  const upd = () => { buildMatchup(); document.getElementById("result").innerHTML = resultHTML(); };
+  document.getElementById("selH").onchange = (e) => { state.home = e.target.value || null; renderPanel(); buildMatchup(); };
+  document.getElementById("selA").onchange = (e) => { state.away = e.target.value || null; renderPanel(); buildMatchup(); };
+  panel.querySelectorAll("input[data-in]").forEach((el) => el.oninput = () => { state.inputs[el.dataset.in] = el.value; upd(); });
+  const nt = document.getElementById("neutral"); if (nt) nt.onchange = () => { state.inputs.neutral = nt.checked; upd(); };
+  document.getElementById("trust").oninput = (e) => { state.trust = e.target.value / 100; document.getElementById("trustv").textContent = e.target.value + "%"; upd(); };
+  document.getElementById("result").innerHTML = resultHTML();
+}
+function resultHTML() {
+  const { home, away } = state;
+  if (!home || !away) return `<p class="note">Choose a home and an away team.</p>`;
+  if (home === away) return `<p class="note">Home and away must be different teams.</p>`;
+  const d = sportData(), neutral = !!state.inputs.neutral;
+  const pj = project(home, away, neutral), th = d.teams[home], ta = d.teams[away];
+  return `<dl class="kv"><dt>${th.name}</dt><dd>net ${sgn(th.off - th.dfn, 2)} · ${th.gp} GP</dd><dt>${ta.name}</dt><dd>net ${sgn(ta.off - ta.dfn, 2)} · ${ta.gp} GP</dd></dl>` + marketHTML(pj);
+}
+
+/* ───────────── wiring ───────────── */
+function refresh() {
+  if (!renderer) { renderPanel(); return; }
+  if (state.view === "land") { Object.assign(cam, { theta: 0.75, phi: 0.95, radius: 17 }); cam.target.set(0, 0.6, 0); buildLandscape(); }
+  else { Object.assign(cam, state.sport === "nfl" ? { theta: 0.3, phi: 1.1, radius: 21 } : { theta: 0.75, phi: 0.95, radius: 13 }); buildMatchup(); }
+  renderPanel();
+}
+function setPressed(ids, on) { ids.forEach((id) => document.getElementById(id).setAttribute("aria-pressed", String(id === on))); }
+document.getElementById("sp-epl").onclick = () => { state.sport = "epl"; state.home = state.away = null; setPressed(["sp-epl", "sp-nfl"], "sp-epl"); refresh(); };
+document.getElementById("sp-nfl").onclick = () => { state.sport = "nfl"; state.home = state.away = null; setPressed(["sp-epl", "sp-nfl"], "sp-nfl"); refresh(); };
+document.getElementById("v-land").onclick = () => { state.view = "land"; setPressed(["v-land", "v-match"], "v-land"); refresh(); };
+document.getElementById("v-match").onclick = () => { state.view = "match"; setPressed(["v-land", "v-match"], "v-match"); refresh(); };
+
+window.addEventListener("resize", resize);
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { refresh(); });
+
+function frame() {
+  if (renderer && dirty) {
+    dirty = false;
+    renderer.setClearColor(col("--bg"));
+    applyCam(); renderer.render(scene, camera); placeLabels();
+  }
+  requestAnimationFrame(frame);
+}
+if (typeof THREE === "undefined") {
+  document.getElementById("fallback").style.display = "flex";
+  document.getElementById("fallback").textContent = "Could not load three.js (offline?). The ratings table on the right still works.";
+  canvas.style.display = "none"; renderPanel();
+} else {
+  initGL();
+  refresh();
+  frame();
+}
+window.__ratings = { state, project };   // handy for debugging in the console
+})();
+</script>
+</body>
+</html>
