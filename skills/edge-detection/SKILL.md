@@ -54,6 +54,10 @@ Example:
 
 This is where skill separates from luck. Your model probability comes from combining:
 
+### Start from team ratings (NFL and Premier League)
+
+For NFL and Premier League games, run `tools/ratings/team_ratings.py` (see `skills/team-ratings/SKILL.md`) first. It rates each side's offence against the opponent's defence, adjusts for schedule strength and home edge, and returns a market-anchored probability. Use that as the **base probability** in the table below; the injury, situational and CLV factors then adjust it. Don't add a second home-field bump.
+
 ### Factor weighting framework
 
 ```

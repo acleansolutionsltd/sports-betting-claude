@@ -53,7 +53,15 @@ Identify these before every game:
 - Cold temps below 25°F: reduce total by 1–1.5 points
 - Dome teams playing outdoors in bad weather: additional -2 to -3 points
 
-### 6. DVOA context
+### 6a. Team ratings: offence vs defence, home/away, schedule strength
+Run `tools/ratings/team_ratings.py matchup nfl [HOME] [AWAY]` (see `skills/team-ratings/SKILL.md`) for every game.
+- Each side's offence is matched against the other's defence, adjusted for the opponents already faced.
+- Early season (weeks 1-4) ratings are mostly last season's, regressed halfway to average: trust the market anchor.
+- International / neutral-site games: pass `--neutral` so no home edge is applied.
+- Teams off a bye or on a short week: apply the rest adjustments below *on top* of the ratings.
+- QB changes are invisible to the ratings: adjust with the QB tiers in section 1.
+
+### 6b. DVOA context
 - Reference Football Outsiders DVOA (Defense-adjusted Value Over Average)
 - Search: `Football Outsiders DVOA current week`
 - High-DVOA offense vs low-DVOA defense: edge exists even if line looks right
