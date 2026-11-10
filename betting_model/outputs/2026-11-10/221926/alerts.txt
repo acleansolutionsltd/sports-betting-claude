@@ -1,0 +1,4 @@
+football: price file is 6425 min old (limit 60) - prices flagged stale
+football: 48 fixtures in the price file have already kicked off - excluded
+football: no upcoming top-league fixtures with prices in the source file (international break, or the file has not been refreshed yet)
+nfl: the source does not report when its prices were last updated - flagged stale
