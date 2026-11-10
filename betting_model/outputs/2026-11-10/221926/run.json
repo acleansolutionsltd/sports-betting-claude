@@ -1,0 +1,35 @@
+{
+ "run_started_utc": "2026-11-10T22:19:26+00:00",
+ "config_hash": "49fbdba7d4ae",
+ "seed": 20261110,
+ "n_sims": 20000,
+ "prob_floor": 0.65,
+ "steps": [
+  "audit",
+  "fetch",
+  "grade",
+  "run"
+ ],
+ "downloads": 0,
+ "audit": {
+  "report": "/home/user/sports-betting-claude/betting_model/data/audit_reports/2026-11-10.md",
+  "corrections": "0",
+  "unresolved": "22",
+  "football_rows": "12959",
+  "nfl_games": "7548",
+  "nfl_player_weeks": "209332"
+ },
+ "legs_graded": 0,
+ "replay": false,
+ "selections": 269,
+ "priced_selections": 7,
+ "example_slip": "no combination of qualifying priced legs lands in the price band",
+ "props": 651,
+ "alerts": [
+  "football: price file is 6425 min old (limit 60) - prices flagged stale",
+  "football: 48 fixtures in the price file have already kicked off - excluded",
+  "football: no upcoming top-league fixtures with prices in the source file (international break, or the file has not been refreshed yet)",
+  "nfl: the source does not report when its prices were last updated - flagged stale"
+ ],
+ "run_finished_utc": "2026-11-10T22:19:37+00:00"
+}

@@ -24,6 +24,12 @@ Data Ingestion → Edge Detection → Bankroll Sizing → Sport Context → Outp
 
 ---
 
+## 🧮 The quantitative model (`betting_model/`)
+
+Alongside the skill files there is now a Python package that builds, backtests and audits a football and NFL model: data audit, Dixon-Coles and score-pair simulations, an EV calculator and accumulator builder, walk-forward backtests, an append-only tracker and a daily pipeline. Start with [`betting_model/README.md`](betting_model/README.md) for how to run it and what the first out-of-sample backtests found; the plan it follows is in [`docs/BUILD_BETTING_MODEL.md`](docs/BUILD_BETTING_MODEL.md).
+
+---
+
 ## ⚡ Quick start (5 minutes)
 
 ### 1. Clone the repo

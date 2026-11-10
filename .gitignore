@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+betting_model/data/raw/*
+betting_model/data/clean/*
+!betting_model/data/raw/.gitkeep
+!betting_model/data/clean/.gitkeep
+betting_model/outputs/replay/
+betting_model/outputs/**/all_legs.csv

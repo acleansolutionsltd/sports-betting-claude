@@ -1,0 +1,1 @@
+bet_id,placed_at_utc,sport,league,event,event_id,event_start_utc,market,selection,market_key,bookmaker,price_decimal,price_source_and_time,model_prob,implied_prob,slip_id,leg_no,slip_price_decimal,stake_units,flags,prev_hash,row_hash

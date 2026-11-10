@@ -1,0 +1,47 @@
+# Standing configuration. Formula-level values (blend weights, decay, floor) are
+# changed only after a Stage 5 walk-forward test and Stage 6 review, never by the pipeline.
+seed: 20261110            # fixed and logged with every run
+n_sims: 20000
+prob_floor: 0.65          # every leg must be at least this model probability
+stake_unit: 1.0           # flat 1-unit baseline (set your own GBP value per unit)
+bookmaker: bet365
+stale_minutes: 60         # a price source older than this is flagged stale
+
+football:
+  leagues:
+    E0: Premier League
+    SP1: La Liga
+    D1: Bundesliga
+    I1: Serie A
+    F1: Ligue 1
+  seasons: ["1920", "2021", "2122", "2223", "2324", "2425", "2526", "2627"]
+  validation_seasons: ["2223", "2324"]   # hyperparameters tuned here, then frozen
+  test_seasons: ["2425", "2526", "2627"] # reported out of sample
+  blend: {market: 0.80, team: 0.15, shots: 0.05}   # standing weights
+  # Stage 5 verdict: has the blend beaten the market-only baseline out of sample?
+  # While false, live probabilities use the de-vigged sharp price alone and the
+  # blend is computed and logged alongside for comparison. Flip only after a
+  # backtest report shows the blend ahead.
+  blend_passed_stage5: false
+  time_decay_xi: 0.003    # per day; best on the validation seasons (see backtest report)
+  ridge: 4.0              # best on the validation seasons
+  history_days: 1095
+  min_team_matches: 8
+  shots_window: 8
+  refit_days: 7
+  dispersion: null        # negative-binomial alpha; null = Poisson marginals
+
+nfl:
+  pool_start_season: 2015 # extra-point rule change; older scores are a different game
+  test_seasons: [2022, 2023, 2024, 2025, 2026]
+  kernel_bw: {spread: 4.0, total: 5.0}
+  min_effective_sample: 150
+  stats_seasons: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
+
+acca:
+  price_band: [11.0, 11.2] # decimal, e.g. a 10/1 target
+
+fetch:
+  cache_minutes: 60
+  max_calls_per_run: 80
+  min_seconds_between_calls: 1.0
